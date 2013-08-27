@@ -1,6 +1,12 @@
 module Main where
 import Data.List
 
+-- | Types
+data Molecule = Submol Atoms | Mol Atom Molecule Int deriving Show
+type Atom = (String, Int)
+type Atoms = [Atom]
+
+-- | Origin determiners.
 isOrigin center rest = (foldl (+) 0 (map snd rest)) == (snd center)
 complement :: [(String, Int)] -> (String, Int) -> Atoms
 complement atoms x = if (head atoms) == x
@@ -14,6 +20,8 @@ nonOrigin atoms origin = Submol (complement atoms origin)
 hasOrigin atoms = foldl (||) False (map (\c -> isOrigin c (complement atoms c)) atoms)
 origin :: [(String, Int)] -> (String, Int)
 origin atoms = fst $ head $ filter snd (map (\a -> (a, isOrigin a (complement atoms a))) atoms)
+
+-- | Permuters.
 groupElms set = map (\ss -> (head ss, length ss)) (group (sort (map fst set)))
 enumerateRows rows = [[(fst r, i) | i <- [0..l]] | r <- rows, let l = (snd r)]
 decisionProduct xs ys = [y:x | x <- xs, y <- ys]
@@ -23,6 +31,8 @@ expandAtoms counts = foldl (++) [] (map (\c -> take (snd c) $ repeat (fst c)) co
 dict key assocs = let (Just v) = lookup key assocs in v
 subMols set = map ((\as -> map (\a -> (a, dict a elements)) as) . expandAtoms) (atomCountPermute set)
               where elements = set
+
+-- | Group division testers.	      
 isRGroup :: [(String, Int)] -> Int -> Bool
 isRGroup atoms rCount = hasOrigin (("R", rCount):atoms)	      
 findGroups :: [(String, Int)] -> ([(String, Int)] -> Bool) -> [[(String, Int)]]
@@ -34,9 +44,8 @@ r1Groups atoms = findGroups atoms isR1Group
 r2Groups atoms = findGroups atoms isR2Group
 r3Groups atoms = findGroups atoms isR3Group
 neutralizes part rest = (sum (map snd part)) == (sum (map snd rest))
-data Molecule = Submol Atoms | Mol Atom Molecule Int deriving Show
-type Atom = (String, Int)
-type Atoms = [Atom]
+
+-- | Solving.
 branchSolve :: [(String, Int)] -> Molecule
 branchSolve atoms = if (hasOrigin atoms)
                     then Mol (origin atoms) (nonOrigin atoms (origin atoms)) 0
